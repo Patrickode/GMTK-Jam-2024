@@ -81,3 +81,4 @@ crashlytics-build.properties
 
 # Irrelevant Apple macOS Hidden File
 *.DS_Store
+GMTK-Jam-2024/ProjectSettings/Packages/com.unity.testtools.codecoverage/Settings.json
