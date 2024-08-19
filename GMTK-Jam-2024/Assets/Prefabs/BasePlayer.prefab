@@ -24,7 +24,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1034418896510247743}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0.75, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -57,7 +57,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2197063077253252507}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.5, y: 0.4, z: 0}
+  m_LocalPosition: {x: 0, y: 0.4, z: 0.5}
   m_LocalScale: {x: 0.25, y: 0.25, z: 0.25}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -271,9 +271,10 @@ GameObject:
   - component: {fileID: 5959286753087323610}
   - component: {fileID: 6370783264450279991}
   - component: {fileID: 5002978771702814965}
+  - component: {fileID: 7125313043041594355}
   m_Layer: 0
   m_Name: BasePlayer
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -310,7 +311,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 0
+  m_Constraints: 112
   m_CollisionDetection: 0
 --- !u!114 &6370783264450279991
 MonoBehaviour:
@@ -342,6 +343,7 @@ MonoBehaviour:
   moveActionRef: {fileID: -7143383841902755325, guid: d3d09a9d8ceba954ab64c222034997b1, type: 3}
   abilityActionRef: {fileID: 7868565766137603388, guid: d3d09a9d8ceba954ab64c222034997b1, type: 3}
   groundChecker: {fileID: 6370783264450279991}
+  _abilityScript: {fileID: 7125313043041594355}
   maxSpeed: 5
   accModifier: 50
   dirChangeThreshold: 0.05
@@ -351,3 +353,22 @@ MonoBehaviour:
   orienter: {fileID: 1034418896510247743}
   objectsToRotate:
   - {fileID: 6985740005929194735}
+--- !u!114 &7125313043041594355
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9200083545322983446}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1e5eeaa7ad04964cb3b71cdd70976f5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  groundChecker: {fileID: 6370783264450279991}
+  jumpActionRef: {fileID: 7868565766137603388, guid: d3d09a9d8ceba954ab64c222034997b1, type: 3}
+  jumpForce: 350
+  fallGravMultiplier: 1.75
+  jumpInProgress: 0
+  jumpBufferDuration: 0.1
+  coyoteTime: 0.1

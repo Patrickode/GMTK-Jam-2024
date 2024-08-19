@@ -54,6 +54,8 @@ public static class Coroutilities
 
             return timerCorout;
         }
+        /// <inheritdoc cref="StartTimer(MonoBehaviour, bool, float)"/>
+        public Coroutine StartTimer(MonoBehaviour timerCoroutOwner, float newDuration, bool realTime = false) => StartTimer(timerCoroutOwner, realTime, newDuration);
 
         public void StopTimer(MonoBehaviour timerCoroutOwner)
         {

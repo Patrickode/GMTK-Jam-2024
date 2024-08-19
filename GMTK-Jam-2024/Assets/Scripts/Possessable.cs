@@ -11,7 +11,9 @@ public class Possessable : MonoBehaviour
     [SerializeField] InputActionReference abilityActionRef;
     [Space(5)]
     [SerializeField] GroundChecker groundChecker;
-    [SerializeField] IAbility abilityScript;
+    [NaughtyAttributes.ValidateInput("ValidateAbilityScript", "Invalid entry; abilityScript does not implement IAbility!")]
+    [SerializeField] MonoBehaviour _abilityScript;
+    IAbility abilityScript;
 
     [Header("Movement Variables")]
     [SerializeField] float maxSpeed = 5;
@@ -35,20 +37,32 @@ public class Possessable : MonoBehaviour
     //[SerializeField] Animator anim;
 
     Rigidbody rb;
+    bool initSuccess;
 
     public InputActionReference AbilityActionRef => abilityActionRef;
     public Vector3 Velocity => rb.velocity;
 
 
 
+    private bool ValidateAbilityScript() => !_abilityScript || _abilityScript is IAbility;
     void Start()
     {
-        rb = GetComponent<Rigidbody>();
+        if (_abilityScript is IAbility script) abilityScript = script;
 
         moveActionRef.action.actionMap.Enable();
+
+        rb = GetComponent<Rigidbody>();
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
+
+        abilityActionRef.action.performed += OnAbilityUsed;
+
+        Coroutilities.DoNextFrame(this, () => initSuccess = true);
     }
     private void OnEnable()
     {
+        // This code is for becoming possessed/enabled after Start() is run once, so bail out if Start hasn't happened yet or happened this frame.
+        if (!initSuccess) return;
+
         rb.interpolation = RigidbodyInterpolation.Interpolate;
         abilityActionRef.action.performed += OnAbilityUsed;
     }
@@ -75,35 +89,43 @@ public class Possessable : MonoBehaviour
         if (maxSpeed <= 0) return;
 
         Vector3 direction = moveActionRef.action.ReadValue<Vector2>();
+        float percentHeld = direction.magnitude;
 
         // Multiplying direction by this quaternion makes it so a "forward" input is forward *according to the direction the camera pivot is facing*
+        // We need to cross with the orienter's right vector because we assume it'll be pitching/yawing; the only stable axis is X, i.e. right
         direction = Quaternion.LookRotation(Vector3.Cross(orienter.transform.right, Vector3.up)) * direction.SwapAxes(1, 2);
 
         //anim.SetFloat("Walk Speed", direction.sqrMagnitude);
 
         bool movingEnoughToRotate = direction.sqrMagnitude > minMoveBeforeRotate * minMoveBeforeRotate;
-        if (movingEnoughToRotate) RotateObjectsWithMovement(direction.normalized);
+        if (movingEnoughToRotate) RotateObjectsTowardMovement(direction.normalized);
 
-        // If we have no grounded checker, ignore this.
-        // If we do have one, are not grounded, and we're inputting significantly,
-        if (groundChecker && !groundChecker.IsGrounded() && movingEnoughToRotate)
-        {
-            // Make velocity point in the direction of input if it's in a different direction (axis delta > deadzone),
-            if (Mathf.Abs(directionLastFrame.x - direction.x) > dirChangeThreshold
-                || Mathf.Abs(directionLastFrame.z - direction.z) > dirChangeThreshold)
-            {
-                // vel = input direction with magnitude of velocity's XZ (i.e., without Y),
-                rb.velocity = direction * Vector3.ProjectOnPlane(rb.velocity, Vector3.up).magnitude;
-                // with Y component equal to velocity's Y
-                rb.velocity = rb.velocity.Adjust(1, rb.velocity.y);
-            }
-        }
-
-        // If both axes are under max speed, apply force in direction.
-        float percentHeld = direction.magnitude;
-        if (Mathf.Abs(rb.velocity.x) < maxSpeed * percentHeld && Mathf.Abs(rb.velocity.z) < maxSpeed * percentHeld)
+        // If lateral velocity is under max speed, apply force in direction.
+        if (rb.velocity.Adjust(1, 0).magnitude < maxSpeed * percentHeld)
         {
             rb.AddForce(direction * accModifier, ForceMode.Force);
+        }
+
+        // If we have no grounded checker, ignore this. If we do have one and are not grounded,
+        if (groundChecker && !groundChecker.IsGrounded())
+        {
+            var velSansY = rb.velocity.Adjust(1, 0);
+            var newVel = velSansY;
+
+            // If input direction is low enough that we wouldn't wanna rotate (close to zero), quarter our lateral speed (it's a magic number but counterpoint: game jam)
+            if (!movingEnoughToRotate)
+            {
+                newVel = velSansY * 0.75f;
+            }
+            // Otherwise, if we're inputting in a different direction than last frame, rotate our velocity toward that direction
+            else if (Mathf.Abs(directionLastFrame.x - direction.x) > dirChangeThreshold
+                || Mathf.Abs(directionLastFrame.z - direction.z) > dirChangeThreshold)
+            {
+                newVel = Vector3.RotateTowards(velSansY, direction * velSansY.magnitude, Mathf.PI * 2, 0);
+            }
+
+            newVel = newVel.Adjust(1, rb.velocity.y);
+            rb.velocity = newVel;
         }
 
         directionLastFrame = direction;
@@ -112,7 +134,7 @@ public class Possessable : MonoBehaviour
 
 
 
-    private void RotateObjectsWithMovement(Vector3 direction)
+    private void RotateObjectsTowardMovement(Vector3 direction)
     {
         if (objectsToRotate.Length < 1) return;
 

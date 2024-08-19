@@ -12,8 +12,8 @@ public class GroundChecker : MonoBehaviour
     // Currently unused, but could be hacked to work by using SweepTestAll and manually discarding results that are outside these layers
     //[SerializeField] private LayerMask groundLayers = ~0;
 
-    float lastCheckTime;
-    bool grounded;
+    [NaughtyAttributes.ShowNonSerializedField] float lastCheckTime;
+    [NaughtyAttributes.ShowNonSerializedField] bool grounded;
     RaycastHit lastHitInfo;
 
     private void Start()
