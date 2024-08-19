@@ -33,9 +33,18 @@ public static class Coroutilities
             }
         }
 
+        /// <summary>
+        /// Sets this timer going, restarting it if it was already going.
+        /// </summary>
+        /// <param name="timerCoroutOwner">The <see cref="MonoBehaviour"/> necessary to run coroutines to which this one is attached to.</param>
+        /// <param name="realTime">Whether to use <see cref="Time.unscaledDeltaTime"/> or not.</param>
+        /// <param name="newDuration">A new duration for this timer. Omit this to leave the duration unchanged.</param>
+        /// <returns>The coroutine being used as a timer.</returns>
         public Coroutine StartTimer(MonoBehaviour timerCoroutOwner, bool realTime = false, float newDuration = -1)
         {
             if (newDuration >= 0) Duration = newDuration;
+
+            TryStopCoroutine(timerCoroutOwner, timerCorout);
 
             timerCorout = DoForSeconds(timerCoroutOwner, () =>
             {
@@ -44,6 +53,12 @@ public static class Coroutilities
             }, Duration, 0, realTime);
 
             return timerCorout;
+        }
+
+        public void StopTimer(MonoBehaviour timerCoroutOwner)
+        {
+            TryStopCoroutine(timerCoroutOwner, ref timerCorout);
+            timeRunning = 0;
         }
 
         public CorouTimer(float duration)
