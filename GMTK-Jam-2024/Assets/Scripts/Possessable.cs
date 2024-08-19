@@ -27,27 +27,34 @@ public class Possessable : MonoBehaviour
     [SerializeField] bool visualizeMoveInput;
 #endif
 
-    [Header("Other References")]
-    [SerializeField] GameObject cameraPivot;
-    [SerializeField] GameObject model;
+    [Header("Rotation/Visuals")]
+    [Tooltip("The object to use when determining what \"forward\" is, like the pivot point of the gameplay camera.")]
+    [SerializeField] GameObject orienter;
+    [Tooltip("All the objects that should rotate to face the direction of movement.")]
+    [SerializeField] GameObject[] objectsToRotate;
     //[SerializeField] Animator anim;
 
     Rigidbody rb;
 
     public InputActionReference AbilityActionRef => abilityActionRef;
-    public GameObject Model => model;
     public Vector3 Velocity => rb.velocity;
-    public bool GroundedCache { get; private set; }
+
+
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
 
         moveActionRef.action.actionMap.Enable();
+    }
+    private void OnEnable()
+    {
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
         abilityActionRef.action.performed += OnAbilityUsed;
     }
-    private void OnDestroy()
+    private void OnDisable()
     {
+        rb.interpolation = RigidbodyInterpolation.None;
         abilityActionRef.action.performed -= OnAbilityUsed;
     }
 
@@ -70,12 +77,12 @@ public class Possessable : MonoBehaviour
         Vector3 direction = moveActionRef.action.ReadValue<Vector2>();
 
         // Multiplying direction by this quaternion makes it so a "forward" input is forward *according to the direction the camera pivot is facing*
-        direction = Quaternion.LookRotation(Vector3.Cross(cameraPivot.transform.right, Vector3.up)) * direction.SwapAxes(1, 2);
+        direction = Quaternion.LookRotation(Vector3.Cross(orienter.transform.right, Vector3.up)) * direction.SwapAxes(1, 2);
 
         //anim.SetFloat("Walk Speed", direction.sqrMagnitude);
 
         bool movingEnoughToRotate = direction.sqrMagnitude > minMoveBeforeRotate * minMoveBeforeRotate;
-        if (movingEnoughToRotate) RotateCharacterModel(direction.normalized);
+        if (movingEnoughToRotate) RotateObjectsWithMovement(direction.normalized);
 
         // If we have no grounded checker, ignore this.
         // If we do have one, are not grounded, and we're inputting significantly,
@@ -105,10 +112,16 @@ public class Possessable : MonoBehaviour
 
 
 
-    private void RotateCharacterModel(Vector3 direction)
+    private void RotateObjectsWithMovement(Vector3 direction)
     {
-        if (!model) return;
-        model.transform.rotation = Quaternion.LookRotation(new Vector3(direction.x, 0, direction.z));
+        if (objectsToRotate.Length < 1) return;
+
+        //Make a rotation where direction is foward; ensure the y component of direction is 0.
+        var desiredRotation = Quaternion.LookRotation(direction.Adjust(1, 0));
+        foreach (var obj in objectsToRotate)
+        {
+            obj.transform.rotation = desiredRotation;
+        }
     }
 
     private void DrawDebugMovementRays(Vector3 direction)
@@ -117,8 +130,8 @@ public class Possessable : MonoBehaviour
         if (!visualizeMoveInput) return;
 
         var lightGrey = new Color(0.75f, 0.75f, 0.75f, 0.8f);
-        Debug.DrawRay(transform.position, Vector3.Cross(cameraPivot.transform.right, Vector3.up) * 2.5f, lightGrey.Adjust(2, 1));
-        Debug.DrawRay(transform.position, cameraPivot.transform.right * 2.5f, lightGrey.Adjust(0, 1));
+        Debug.DrawRay(transform.position, Vector3.Cross(orienter.transform.right, Vector3.up) * 2.5f, lightGrey.Adjust(2, 1));
+        Debug.DrawRay(transform.position, orienter.transform.right * 2.5f, lightGrey.Adjust(0, 1));
 
         Debug.DrawRay(transform.position, rb.velocity, Color.yellow.Adjust(3, 0.6f));
         Debug.DrawRay(transform.position, rb.velocity - Vector3.up * rb.velocity.y, Color.yellow);
