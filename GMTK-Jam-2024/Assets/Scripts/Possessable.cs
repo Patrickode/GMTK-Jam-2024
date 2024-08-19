@@ -43,6 +43,7 @@ public class Possessable : MonoBehaviour
 
     void Start()
     {
+        moveActionRef.action.actionMap.Enable();
         abilityActionRef.action.performed += OnAbilityUsed;
     }
     private void OnDestroy()
