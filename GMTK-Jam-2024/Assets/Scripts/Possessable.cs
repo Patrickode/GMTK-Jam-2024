@@ -4,37 +4,36 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+[RequireComponent(typeof(Rigidbody))]
 public class Possessable : MonoBehaviour
 {
     [SerializeField] InputActionReference moveActionRef;
     [SerializeField] InputActionReference abilityActionRef;
-    
+    [Space(5)]
+    [SerializeField] GroundChecker groundChecker;
+    [SerializeField] IAbility abilityScript;
+
     [Header("Movement Variables")]
     [SerializeField] float maxSpeed;
     [SerializeField] float accModifier;
     [Space(5)]
     [SerializeField] float dirChangeThreshold = 0.01f;
     [Space(5)]
-    [SerializeField] [NaughtyAttributes.ReadOnly] Vector3 directionLastFrame;
+    [NaughtyAttributes.ShowNonSerializedField] Vector3 directionLastFrame;
 #if UNITY_EDITOR
     [SerializeField] bool visualizeMoveInput;
 #endif
 
-    [Header("Self Component References")]
-    [SerializeField] private Rigidbody rb;
-    [SerializeField] private GroundChecker groundChecker;
-
-    [Header("Child Object References")]
-    [SerializeField] IAbility abilityScript;
-    [SerializeField] GameObject model;
+    [Header("Other References")]
     [SerializeField] GameObject cameraPivot;
-
-    //[Header("External References")]
+    [SerializeField] GameObject model;
     //[SerializeField] Animator anim;
 
     [Header("Rotation Controls")]
     [SerializeField] float rotationSpeed;
-    [SerializeField] float minRotationDistance;
+    [SerializeField] float minMoveBeforeRotate;
+
+    Rigidbody rb;
 
     public InputActionReference AbilityActionRef => abilityActionRef;
     public GameObject Model => model;
@@ -43,6 +42,8 @@ public class Possessable : MonoBehaviour
 
     void Start()
     {
+        rb = GetComponent<Rigidbody>();
+
         moveActionRef.action.actionMap.Enable();
         abilityActionRef.action.performed += OnAbilityUsed;
     }
@@ -53,7 +54,7 @@ public class Possessable : MonoBehaviour
 
     private void OnAbilityUsed(InputAction.CallbackContext ctx)
     {
-        abilityScript.DoAbility();
+        if (abilityScript != null) abilityScript.DoAbility();
     }
 
 
@@ -74,17 +75,22 @@ public class Possessable : MonoBehaviour
 
         //anim.SetFloat("Walk Speed", direction.sqrMagnitude);
 
-        if (direction.sqrMagnitude > minRotationDistance * minRotationDistance)
-            RotateCharacterModel(direction.normalized);
+        bool movingEnoughToRotate = direction.sqrMagnitude > minMoveBeforeRotate * minMoveBeforeRotate;
+        if (movingEnoughToRotate) RotateCharacterModel(direction.normalized);
 
-        // If we are not grounded, inputting significantly, and in a significantly different direction (axis delta > deadzone),
-        if (!groundChecker.IsGrounded()
-            && direction.sqrMagnitude > minRotationDistance * minRotationDistance
-            && (Mathf.Abs(directionLastFrame.x - direction.x) > dirChangeThreshold
-            || Mathf.Abs(directionLastFrame.z - direction.z) > dirChangeThreshold))
+        // If we have no grounded checker, ignore this.
+        // If we do have one, are not grounded, and we're inputting significantly,
+        if (groundChecker && !groundChecker.IsGrounded() && movingEnoughToRotate)
         {
-            // Make velocity point in the direction of input; input direction with the XZ magnitude of velocity, with the Y component of velocity
-            rb.velocity = (direction * Vector3.ProjectOnPlane(rb.velocity, Vector3.up).magnitude).Adjust(1, rb.velocity.y);
+            // Make velocity point in the direction of input if it's in a different direction (axis delta > deadzone),
+            if (Mathf.Abs(directionLastFrame.x - direction.x) > dirChangeThreshold
+                || Mathf.Abs(directionLastFrame.z - direction.z) > dirChangeThreshold)
+            {
+                // vel = input direction with magnitude of velocity's XZ (i.e., without Y),
+                rb.velocity = direction * Vector3.ProjectOnPlane(rb.velocity, Vector3.up).magnitude;
+                // with Y component equal to velocity's Y
+                rb.velocity = rb.velocity.Adjust(1, rb.velocity.y);
+            }
         }
 
         // If both axes are under max speed, apply force in direction.

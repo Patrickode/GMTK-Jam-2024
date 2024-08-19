@@ -5,11 +5,12 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public class JumpAbility : MonoBehaviour, IAbility
 {
+    [NaughtyAttributes.Required]
     [SerializeField] GroundChecker groundChecker;
+    [SerializeField] UnityEngine.InputSystem.InputActionReference jumpActionRef;
 
     [Header("Jump Controls")]
-    [SerializeField] UnityEngine.InputSystem.InputActionReference jumpActionRef;
-    [SerializeField] [NaughtyAttributes.ReadOnly] bool jumpInProgress = false;
+    [NaughtyAttributes.ShowNonSerializedField] bool jumpInProgress = false;
     [SerializeField] float jumpForce;
     [SerializeField] float fallGravMultiplier = 1;
 
@@ -42,7 +43,7 @@ public class JumpAbility : MonoBehaviour, IAbility
     private void FixedUpdate()
     {
         if (jumpBuffer.IsRunning) TryDoJump();
-        
+
         bool groundedCache = groundChecker.IsGrounded();
 
         // If coyote time is enabled (>0), and we're not grounded, and we were grounded last frame, and we're not already jumping,
