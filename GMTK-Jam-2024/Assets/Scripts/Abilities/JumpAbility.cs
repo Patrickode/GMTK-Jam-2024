@@ -10,9 +10,9 @@ public class JumpAbility : MonoBehaviour, IAbility
     [SerializeField] UnityEngine.InputSystem.InputActionReference jumpActionRef;
 
     [Header("Jump Controls")]
-    [NaughtyAttributes.ShowNonSerializedField] bool jumpInProgress = false;
-    [SerializeField] float jumpForce;
-    [SerializeField] float fallGravMultiplier = 1;
+    [SerializeField] float jumpForce = 350;
+    [SerializeField] float fallGravMultiplier = 1.75f;
+    [SerializeField] [NaughtyAttributes.ReadOnly] bool jumpInProgress = false;
 
     [Header("Jump Leeway Options")]
     [SerializeField] [Min(0)] float jumpBufferDuration = 0.1f;

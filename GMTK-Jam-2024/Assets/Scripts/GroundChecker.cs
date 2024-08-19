@@ -8,7 +8,7 @@ public class GroundChecker : MonoBehaviour
     [SerializeField] Rigidbody rbToCheckWith;
     [SerializeField] [Min(0)] float maxCastDistance = 0.1f;
     [Tooltip("The percentage incline allowed before slipping/not being grounded; 0 is an uninclined floor, 0.5 is a 45 degree slope, etc.")]
-    [SerializeField] [Range(0, 1)] float maxIncline;
+    [SerializeField] [Range(0, 1)] float maxIncline = 0.5f;
     // Currently unused, but could be hacked to work by using SweepTestAll and manually discarding results that are outside these layers
     //[SerializeField] private LayerMask groundLayers = ~0;
 

@@ -14,12 +14,15 @@ public class Possessable : MonoBehaviour
     [SerializeField] IAbility abilityScript;
 
     [Header("Movement Variables")]
-    [SerializeField] float maxSpeed;
-    [SerializeField] float accModifier;
+    [SerializeField] float maxSpeed = 5;
+    [SerializeField] float accModifier = 50;
     [Space(5)]
-    [SerializeField] float dirChangeThreshold = 0.01f;
-    [Space(5)]
-    [NaughtyAttributes.ShowNonSerializedField] Vector3 directionLastFrame;
+    [Tooltip("The point at which a difference in input is considered a change in direction. Used for aerial movement adjustments.")]
+    [SerializeField] float dirChangeThreshold = 0.05f;
+    [SerializeField] float minMoveBeforeRotate = 0.01f;
+
+    [Header("Debug")]
+    [SerializeField] [NaughtyAttributes.ReadOnly] Vector3 directionLastFrame;
 #if UNITY_EDITOR
     [SerializeField] bool visualizeMoveInput;
 #endif
@@ -28,10 +31,6 @@ public class Possessable : MonoBehaviour
     [SerializeField] GameObject cameraPivot;
     [SerializeField] GameObject model;
     //[SerializeField] Animator anim;
-
-    [Header("Rotation Controls")]
-    [SerializeField] float rotationSpeed;
-    [SerializeField] float minMoveBeforeRotate;
 
     Rigidbody rb;
 
@@ -108,7 +107,7 @@ public class Possessable : MonoBehaviour
 
     private void RotateCharacterModel(Vector3 direction)
     {
-        if (direction.sqrMagnitude <= Mathf.Epsilon) return;
+        if (!model) return;
         model.transform.rotation = Quaternion.LookRotation(new Vector3(direction.x, 0, direction.z));
     }
 
