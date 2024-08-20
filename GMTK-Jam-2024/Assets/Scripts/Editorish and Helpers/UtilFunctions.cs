@@ -687,4 +687,81 @@ public static class UtilFunctions
     }
     public static bool CompareTagInChildren(Component subject, string tag, int levels = int.MaxValue, bool checkSelf = true)
         => CompareTagInChildren(subject.transform, tag, levels, checkSelf);
+
+    /// <summary>
+    /// Sets the tag of children to <paramref name="tag"/>, optionally including this object.
+    /// </summary>
+    /// <param name="levels">The amount of times to recurse as we go through children; 1 would mean going no deeper than direct children.</param>
+    public static void SetTagInChildren(Transform subject, string tag, bool includeSelf, int levels = int.MaxValue)
+    {
+        if (includeSelf) subject.tag = tag;
+        if (levels < 1) return;
+
+        foreach (Transform child in subject)
+            SetTagInChildren(child, tag, true, levels - 1);
+    }
+    /// <inheritdoc cref="SetTagInChildren(Transform, string, bool, int)"/>
+    public static void SetTagInChildren(Component subject, string tag, bool includeSelf, int levels = int.MaxValue)
+        => SetTagInChildren(subject.transform, tag, includeSelf, levels);
+
+    /// <summary>
+    /// Goes through children and stores their tags in the provided array, <paramref name="tagsGotten"/>, in hierarchy order (top to bottom).
+    /// </summary>
+    /// <param name="levels">The amount of times to recurse as we go through children; 1 would mean going no deeper than direct children.</param>
+    /// <param name="startIndex">The index of <paramref name="tagsGotten"/> to start at. Used internally for recursion.</param>
+    /// <returns>The number of tags added to <paramref name="tagsGotten"/>. Used internally for recursion.</returns>
+    public static int GetTagsOfChildren(string[] tagsGotten, Transform subject, bool includeSelf, int levels = int.MaxValue, int startIndex = 0)
+    {
+        if (startIndex > tagsGotten.Length - 1) return 0;
+
+        int tagsAdded = 0;
+        if (includeSelf)
+        {
+            tagsGotten[startIndex] = subject.tag;
+            tagsAdded++;
+        }
+        if (levels < 1) return tagsAdded;
+
+        foreach (Transform child in subject)
+        {
+            tagsAdded += GetTagsOfChildren(tagsGotten, child, true, levels - 1, startIndex + tagsAdded);
+        }
+
+        return tagsAdded;
+    }
+    /// <inheritdoc cref="GetTagsOfChildren(string[], Transform, bool, int, int)"/>
+    public static int GetTagsOfChildren(string[] tagsGotten, Component subject, bool includeSelf, int levels = int.MaxValue, int startIndex = 0)
+        => GetTagsOfChildren(tagsGotten, subject.transform, includeSelf, levels, startIndex);
+
+    /// <summary>
+    /// Takes a provided array <paramref name="tags"/> and sets each one to this object's children, optionally including itself, 
+    /// in hierarchy order (top to bottom).
+    /// <br/><br/>
+    /// Intended to be used with <see cref="GetTagsOfChildren(string[], Transform, bool, int, int)"/>.
+    /// </summary>
+    /// <param name="levels">The amount of times to recurse as we go through children; 1 would mean going no deeper than direct children.</param>
+    /// <param name="startIndex">The index of <paramref name="tags"/> to start at. Used internally for recursion.</param>
+    /// <returns>The number of tags assigned from <paramref name="tags"/>. Used internally for recursion.</returns>
+    public static int SetTagsOfChildren(Transform subject, string[] tags, bool includeSelf, int levels = int.MaxValue, int startIndex = 0)
+    {
+        if (startIndex > tags.Length - 1) return 0;
+
+        int tagsSet = 0;
+        if (includeSelf)
+        {
+            subject.tag = tags[startIndex];
+            tagsSet++;
+        }
+        if (levels < 1) return tagsSet;
+
+        foreach (Transform child in subject)
+        {
+            tagsSet += SetTagsOfChildren(child, tags, true, levels - 1, startIndex + tagsSet);
+        }
+
+        return tagsSet;
+    }
+    /// <inheritdoc cref="SetTagsOfChildren(Transform, string[], bool, int, int)"/>
+    public static int SetTagsInChildren(Component subject, string[] tags, bool includeSelf, int levels = int.MaxValue, int startIndex = 0)
+        => SetTagsOfChildren(subject.transform, tags, includeSelf, levels, startIndex);
 }

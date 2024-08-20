@@ -44,7 +44,7 @@ public class Possessable : MonoBehaviour
     //[SerializeField] Animator anim;
 
     Rigidbody rb;
-    bool initSuccess;
+    string[] unpossessedTags = new string[20];
 
     static float yawCurrent;
     static float pitchCurrent;
@@ -56,7 +56,7 @@ public class Possessable : MonoBehaviour
 
 
     private bool ValidateAbilityScript() => !_abilityScript || _abilityScript is IAbility;
-    void Start()
+    void Awake()
     {
         if (_abilityScript is IAbility script) abilityScript = script;
 
@@ -68,28 +68,24 @@ public class Possessable : MonoBehaviour
         targetRotation.eulerAngles = targetRotation.eulerAngles.Adjust(2, 0);
         yawCurrent = targetRotation.eulerAngles.y;
         pitchCurrent = -targetRotation.eulerAngles.x;
-
-        JustGotPossessed();
-
-        Coroutilities.DoNextFrame(this, () => initSuccess = true);
     }
 
     private void OnEnable()
     {
-        // This code is for becoming possessed/enabled after Start() is run once, so bail out if Start hasn't happened yet or happened this frame.
-        if (!initSuccess) return;
-
-        JustGotPossessed();
-    }
-    private void JustGotPossessed()
-    {
         rb.interpolation = RigidbodyInterpolation.Interpolate;
         abilityActionRef.action.performed += OnAbilityUsed;
+
+        if (string.IsNullOrEmpty(unpossessedTags[0]))
+            UtilFunctions.GetTagsOfChildren(unpossessedTags, transform, true);
+
+        UtilFunctions.SetTagInChildren(transform, "Player", true);
     }
     private void OnDisable()
     {
         rb.interpolation = RigidbodyInterpolation.None;
         abilityActionRef.action.performed -= OnAbilityUsed;
+
+        UtilFunctions.SetTagsOfChildren(transform, unpossessedTags, true);
     }
 
     private void OnAbilityUsed(InputAction.CallbackContext ctx)
