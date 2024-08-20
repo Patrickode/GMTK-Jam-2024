@@ -342,6 +342,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveActionRef: {fileID: -7143383841902755325, guid: d3d09a9d8ceba954ab64c222034997b1, type: 3}
   abilityActionRef: {fileID: 7868565766137603388, guid: d3d09a9d8ceba954ab64c222034997b1, type: 3}
+  lookActionRef: {fileID: 3197026233358569460, guid: d3d09a9d8ceba954ab64c222034997b1, type: 3}
+  enableLookActionRef: {fileID: 1045007453119969637, guid: d3d09a9d8ceba954ab64c222034997b1, type: 3}
   groundChecker: {fileID: 6370783264450279991}
   _abilityScript: {fileID: 7125313043041594355}
   maxSpeed: 5
@@ -351,6 +353,11 @@ MonoBehaviour:
   directionLastFrame: {x: 0, y: 0, z: 0}
   visualizeMoveInput: 0
   orienter: {fileID: 1034418896510247743}
+  clickAndDrag: 1
+  invertX: 0
+  invertY: 0
+  lookSpeed: 100
+  pitchRange: {x: -75, y: 75}
   objectsToRotate:
   - {fileID: 6985740005929194735}
 --- !u!114 &7125313043041594355

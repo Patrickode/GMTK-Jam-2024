@@ -9,6 +9,8 @@ public class Possessable : MonoBehaviour
 {
     [SerializeField] InputActionReference moveActionRef;
     [SerializeField] InputActionReference abilityActionRef;
+    [SerializeField] InputActionReference lookActionRef;
+    [SerializeField] InputActionReference enableLookActionRef;
     [Space(5)]
     [SerializeField] GroundChecker groundChecker;
     [NaughtyAttributes.ValidateInput("ValidateAbilityScript", "Invalid entry; abilityScript does not implement IAbility!")]
@@ -29,15 +31,24 @@ public class Possessable : MonoBehaviour
     [SerializeField] bool visualizeMoveInput;
 #endif
 
-    [Header("Rotation/Visuals")]
+    [Header("Camera/Visuals")]
     [Tooltip("The object to use when determining what \"forward\" is, like the pivot point of the gameplay camera.")]
     [SerializeField] GameObject orienter;
+    [SerializeField] bool clickAndDrag;
+    [SerializeField] bool invertX;
+    [SerializeField] bool invertY;
+    [SerializeField] float lookSpeed = 100;
+    [SerializeField] [VectorLabels("Min", "Max")] Vector2 pitchRange = new(-75, 75);
     [Tooltip("All the objects that should rotate to face the direction of movement.")]
     [SerializeField] GameObject[] objectsToRotate;
     //[SerializeField] Animator anim;
 
     Rigidbody rb;
     bool initSuccess;
+
+    static float yawCurrent;
+    static float pitchCurrent;
+    static Quaternion targetRotation;
 
     public InputActionReference AbilityActionRef => abilityActionRef;
     public Vector3 Velocity => rb.velocity;
@@ -52,17 +63,26 @@ public class Possessable : MonoBehaviour
         moveActionRef.action.actionMap.Enable();
 
         rb = GetComponent<Rigidbody>();
-        rb.interpolation = RigidbodyInterpolation.Interpolate;
 
-        abilityActionRef.action.performed += OnAbilityUsed;
+        targetRotation = orienter.transform.localRotation;
+        targetRotation.eulerAngles = targetRotation.eulerAngles.Adjust(2, 0);
+        yawCurrent = targetRotation.eulerAngles.y;
+        pitchCurrent = -targetRotation.eulerAngles.x;
+
+        JustGotPossessed();
 
         Coroutilities.DoNextFrame(this, () => initSuccess = true);
     }
+
     private void OnEnable()
     {
         // This code is for becoming possessed/enabled after Start() is run once, so bail out if Start hasn't happened yet or happened this frame.
         if (!initSuccess) return;
 
+        JustGotPossessed();
+    }
+    private void JustGotPossessed()
+    {
         rb.interpolation = RigidbodyInterpolation.Interpolate;
         abilityActionRef.action.performed += OnAbilityUsed;
     }
@@ -75,6 +95,28 @@ public class Possessable : MonoBehaviour
     private void OnAbilityUsed(InputAction.CallbackContext ctx)
     {
         if (abilityScript != null) abilityScript.DoAbility();
+    }
+
+
+
+    private void Update()
+    {
+        Vector2 lookAxis = lookActionRef.action.ReadValue<Vector2>();
+
+        if (lookAxis != Vector2.zero
+            && (!clickAndDrag || enableLookActionRef.action.IsPressed()))
+        {
+            yawCurrent += lookSpeed * lookAxis.x * Time.deltaTime;
+            //Axis for yaw is multiplied by -1 if invertX is true
+            targetRotation = Quaternion.AngleAxis(yawCurrent, Vector3.up * (invertX ? -1 : 1));
+
+            pitchCurrent += lookSpeed * lookAxis.y * Time.deltaTime;
+            pitchCurrent = Mathf.Clamp(pitchCurrent, pitchRange.x, pitchRange.y);
+            //Axis for pitch is multiplied by -1 if invertY is true
+            targetRotation *= Quaternion.AngleAxis(pitchCurrent, Vector3.left * (invertY ? -1 : 1));
+        }
+
+        orienter.transform.localRotation = targetRotation;
     }
 
 
